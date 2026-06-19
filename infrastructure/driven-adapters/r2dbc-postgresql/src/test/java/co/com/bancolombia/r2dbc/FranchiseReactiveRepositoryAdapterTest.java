@@ -39,6 +39,8 @@ class FranchiseReactiveRepositoryAdapterTest {
     private static final String DOMAIN_ID = "original-id";
     private static final String PERSISTED_ID = "generated-uuid";
     private static final String FRANCHISE_NAME = "My Franchise";
+    private static final String UNKNOWN_ID = "unknown-id";
+    private static final String DB_ERROR_MSG = "DB error";
 
     private Franchise domainFranchise;
     private FranchiseEntity persistedEntity;
@@ -124,12 +126,12 @@ class FranchiseReactiveRepositoryAdapterTest {
         @Test
         @DisplayName("should propagate a RuntimeException thrown by the repository")
         void shouldPropagateRuntimeException() {
-            RuntimeException dbError = new RuntimeException("DB error");
+            RuntimeException dbError = new RuntimeException(DB_ERROR_MSG);
             when(repository.save(any(FranchiseEntity.class))).thenReturn(Mono.error(dbError));
 
             StepVerifier.create(repositoryAdapter.saveFranchise(domainFranchise)).expectErrorSatisfies(ex -> {
                 assertThat(ex).isInstanceOf(RuntimeException.class);
-                assertThat(ex.getMessage()).isEqualTo("DB error");
+                assertThat(ex.getMessage()).isEqualTo(DB_ERROR_MSG);
             }).verify();
         }
 
@@ -152,6 +154,127 @@ class FranchiseReactiveRepositoryAdapterTest {
             when(repository.save(any(FranchiseEntity.class))).thenReturn(Mono.empty());
 
             StepVerifier.create(repositoryAdapter.saveFranchise(domainFranchise)).verifyComplete();
+        }
+    }
+
+    @Nested
+    @DisplayName("findFranchiseById")
+    class FindFranchiseById {
+
+        @Test
+        @DisplayName("should return mapped domain object when entity is found")
+        void shouldReturnMappedDomainObjectWhenFound() {
+            FranchiseEntity entity = FranchiseEntity.builder().id(DOMAIN_ID).name(FRANCHISE_NAME).isNew(false).build();
+            when(repository.findById(DOMAIN_ID)).thenReturn(Mono.just(entity));
+
+            StepVerifier.create(repositoryAdapter.findFranchiseById(DOMAIN_ID))
+                    .assertNext(result -> {
+                        assertThat(result.id()).isEqualTo(DOMAIN_ID);
+                        assertThat(result.name()).isEqualTo(Optional.of(FRANCHISE_NAME));
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("should return empty stream when entity is not found")
+        void shouldReturnEmptyWhenNotFound() {
+            when(repository.findById(UNKNOWN_ID)).thenReturn(Mono.empty());
+
+            StepVerifier.create(repositoryAdapter.findFranchiseById(UNKNOWN_ID))
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("should propagate error from repository")
+        void shouldPropagateError() {
+            RuntimeException error = new RuntimeException(DB_ERROR_MSG);
+            when(repository.findById(DOMAIN_ID)).thenReturn(Mono.error(error));
+
+            StepVerifier.create(repositoryAdapter.findFranchiseById(DOMAIN_ID))
+                    .expectErrorSatisfies(ex -> {
+                        assertThat(ex).isInstanceOf(RuntimeException.class);
+                        assertThat(ex.getMessage()).isEqualTo(DB_ERROR_MSG);
+                    })
+                    .verify();
+        }
+    }
+
+    @Nested
+    @DisplayName("updateFranchiseName")
+    class UpdateFranchiseName {
+
+        private static final String NEW_NAME = "Updated Name";
+
+        @Test
+        @DisplayName("should find franchise then save with updated name")
+        void shouldUpdateFranchiseNameSuccessfully() {
+            FranchiseEntity originalEntity = FranchiseEntity.builder().id(DOMAIN_ID).name(FRANCHISE_NAME).isNew(false).build();
+            FranchiseEntity updatedEntity = FranchiseEntity.builder().id(DOMAIN_ID).name(NEW_NAME).isNew(false).build();
+            when(repository.findById(DOMAIN_ID)).thenReturn(Mono.just(originalEntity));
+            when(repository.save(any(FranchiseEntity.class))).thenReturn(Mono.just(updatedEntity));
+
+            StepVerifier.create(repositoryAdapter.updateFranchiseName(DOMAIN_ID, NEW_NAME))
+                    .assertNext(result -> {
+                        assertThat(result.id()).isEqualTo(DOMAIN_ID);
+                        assertThat(result.name()).isEqualTo(Optional.of(NEW_NAME));
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("should save entity with isNew=false and updated name")
+        void shouldSaveWithIsNewFalseAndNewName() {
+            FranchiseEntity originalEntity = FranchiseEntity.builder().id(DOMAIN_ID).name(FRANCHISE_NAME).isNew(false).build();
+            FranchiseEntity updatedEntity = FranchiseEntity.builder().id(DOMAIN_ID).name(NEW_NAME).isNew(false).build();
+            ArgumentCaptor<FranchiseEntity> captor = ArgumentCaptor.forClass(FranchiseEntity.class);
+            when(repository.findById(DOMAIN_ID)).thenReturn(Mono.just(originalEntity));
+            when(repository.save(captor.capture())).thenReturn(Mono.just(updatedEntity));
+
+            StepVerifier.create(repositoryAdapter.updateFranchiseName(DOMAIN_ID, NEW_NAME))
+                    .expectNextCount(1)
+                    .verifyComplete();
+
+            assertThat(captor.getValue().isNew()).isFalse();
+            assertThat(captor.getValue().getName()).isEqualTo(NEW_NAME);
+        }
+
+        @Test
+        @DisplayName("should return empty stream when franchise is not found")
+        void shouldReturnEmptyWhenFranchiseNotFound() {
+            when(repository.findById(UNKNOWN_ID)).thenReturn(Mono.empty());
+
+            StepVerifier.create(repositoryAdapter.updateFranchiseName(UNKNOWN_ID, NEW_NAME))
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("should propagate error when find fails")
+        void shouldPropagateErrorWhenFindFails() {
+            RuntimeException error = new RuntimeException(DB_ERROR_MSG);
+            when(repository.findById(DOMAIN_ID)).thenReturn(Mono.error(error));
+
+            StepVerifier.create(repositoryAdapter.updateFranchiseName(DOMAIN_ID, NEW_NAME))
+                    .expectErrorSatisfies(ex -> {
+                        assertThat(ex).isInstanceOf(RuntimeException.class);
+                        assertThat(ex.getMessage()).isEqualTo(DB_ERROR_MSG);
+                    })
+                    .verify();
+        }
+
+        @Test
+        @DisplayName("should propagate error when save fails")
+        void shouldPropagateErrorWhenSaveFails() {
+            FranchiseEntity originalEntity = FranchiseEntity.builder().id(DOMAIN_ID).name(FRANCHISE_NAME).isNew(false).build();
+            RuntimeException error = new RuntimeException("Save failed");
+            when(repository.findById(DOMAIN_ID)).thenReturn(Mono.just(originalEntity));
+            when(repository.save(any(FranchiseEntity.class))).thenReturn(Mono.error(error));
+
+            StepVerifier.create(repositoryAdapter.updateFranchiseName(DOMAIN_ID, NEW_NAME))
+                    .expectErrorSatisfies(ex -> {
+                        assertThat(ex).isInstanceOf(RuntimeException.class);
+                        assertThat(ex.getMessage()).isEqualTo("Save failed");
+                    })
+                    .verify();
         }
     }
 }

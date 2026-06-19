@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
+import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
+import static org.springframework.web.reactive.function.server.RequestPredicates.PATCH;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
@@ -17,6 +19,9 @@ public class RouterRest {
     public RouterFunction<ServerResponse> routerFunction(
             FranchiseHandler franchiseHandler,
             @Value("${api.paths.franchises}") String franchisesPath) {
-        return route(POST(franchisesPath), franchiseHandler::createFranchise);
+        String franchisePath = franchisesPath + "/{id}";
+        return route(POST(franchisesPath), franchiseHandler::createFranchise)
+                .andRoute(GET(franchisePath), franchiseHandler::getFranchiseById)
+                .andRoute(PATCH(franchisePath), franchiseHandler::updateFranchiseName);
     }
 }

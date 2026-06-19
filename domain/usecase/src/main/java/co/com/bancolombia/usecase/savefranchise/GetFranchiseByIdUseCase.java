@@ -6,11 +6,12 @@ import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
-public class SaveFranchiseUseCase {
+public class GetFranchiseByIdUseCase {
 
     private final FranchiseRepository franchiseRepository;
 
-    public Mono<Franchise> run(Franchise franchise) {
-        return franchiseRepository.saveFranchise(franchise);
+    public Mono<Franchise> run(String id) {
+        return franchiseRepository.findFranchiseById(id);
     }
+
 }

@@ -33,6 +33,23 @@ public class FranchiseReactiveRepositoryAdapter
                 .map(FranchiseReactiveRepositoryAdapter::toFranchise);
     }
 
+    @Override
+    public Mono<Franchise> updateFranchiseName(String id, String name) {
+        return findFranchiseById(id)
+                .flatMap(franchise -> updateFranchiseName(name, franchise));
+    }
+
+    private Mono<Franchise> updateFranchiseName(String name, Franchise franchise) {
+        FranchiseEntity updatedFranchise = new FranchiseEntity(franchise.id(), name, false);
+        return repository.save(updatedFranchise).map(FranchiseReactiveRepositoryAdapter::toFranchise);
+    }
+
+    @Override
+    public Mono<Franchise> findFranchiseById(String id) {
+        return repository.findById(id)
+                .map(FranchiseReactiveRepositoryAdapter::toFranchise);
+    }
+
     private static Franchise toFranchise(FranchiseEntity entity) {
         return new Franchise(entity.getId(), Optional.ofNullable(entity.getName()));
     }
