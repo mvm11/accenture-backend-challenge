@@ -1,60 +1,89 @@
 package co.com.bancolombia.api;
 
-import org.assertj.core.api.Assertions;
+import co.com.bancolombia.api.franchise.FranchiseHandler;
+import co.com.bancolombia.model.franchise.Franchise;
+import co.com.bancolombia.usecase.savefranchise.SaveFranchiseUseCase;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
-@ContextConfiguration(classes = {RouterRest.class, Handler.class})
+import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 @WebFluxTest
+@ContextConfiguration(classes = {RouterRest.class, FranchiseHandler.class})
 class RouterRestTest {
 
     @Autowired
     private WebTestClient webTestClient;
 
-    @Test
-    void testListenGETUseCase() {
-        webTestClient.get()
-                .uri("/api/usecase/path")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(String.class)
-                .value(userResponse -> {
-                            Assertions.assertThat(userResponse).isEmpty();
-                        }
-                );
-    }
+    @MockitoBean
+    private SaveFranchiseUseCase saveFranchiseUseCase;
 
-    @Test
-    void testListenGETOtherUseCase() {
-        webTestClient.get()
-                .uri("/api/otherusercase/path")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(String.class)
-                .value(userResponse -> {
-                            Assertions.assertThat(userResponse).isEmpty();
-                        }
-                );
-    }
+    @Value("${api.paths.franchises}")
+    private String franchisesPath;
 
-    @Test
-    void testListenPOSTUseCase() {
-        webTestClient.post()
-                .uri("/api/usecase/otherpath")
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue("")
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(String.class)
-                .value(userResponse -> {
-                            Assertions.assertThat(userResponse).isEmpty();
-                        }
-                );
+    private static final String VALID_BODY = """
+            {"name": "My Franchise"}
+            """;
+
+    @Nested
+    @DisplayName("POST /api/v1/franchises – routing")
+    class PostFranchisesRoute {
+
+        @Test
+        @DisplayName("should route POST to FranchiseHandler and return 201")
+        void shouldRouteToHandler() {
+            Franchise saved = new Franchise("uuid-1", Optional.of("My Franchise"));
+            when(saveFranchiseUseCase.save(any())).thenReturn(Mono.just(saved));
+
+            webTestClient.post()
+                    .uri(franchisesPath)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(VALID_BODY)
+                    .exchange()
+                    .expectStatus().isCreated();
+        }
+
+        @Test
+        @DisplayName("should return 404 for GET on the franchises path (functional routing has no method-level 405)")
+        void shouldReturn404ForGetMethod() {
+            webTestClient.get()
+                    .uri(franchisesPath)
+                    .exchange()
+                    .expectStatus().isNotFound();
+        }
+
+        @Test
+        @DisplayName("should return 404 for PUT on the franchises path")
+        void shouldReturn404ForPutMethod() {
+            webTestClient.put()
+                    .uri(franchisesPath)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(VALID_BODY)
+                    .exchange()
+                    .expectStatus().isNotFound();
+        }
+
+        @Test
+        @DisplayName("should return 404 for POST to an unregistered path")
+        void shouldReturn404ForUnknownPath() {
+            webTestClient.post()
+                    .uri(franchisesPath + "/nonexistent")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(VALID_BODY)
+                    .exchange()
+                    .expectStatus().isNotFound();
+        }
     }
 }
