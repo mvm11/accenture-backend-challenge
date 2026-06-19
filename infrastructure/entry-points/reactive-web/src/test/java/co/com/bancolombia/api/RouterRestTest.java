@@ -2,7 +2,9 @@ package co.com.bancolombia.api;
 
 import co.com.bancolombia.api.franchise.FranchiseHandler;
 import co.com.bancolombia.model.franchise.Franchise;
+import co.com.bancolombia.usecase.savefranchise.GetFranchiseByIdUseCase;
 import co.com.bancolombia.usecase.savefranchise.SaveFranchiseUseCase;
+import co.com.bancolombia.usecase.savefranchise.UpdateFranchiseNameUseCase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,12 @@ class RouterRestTest {
     @MockitoBean
     private SaveFranchiseUseCase saveFranchiseUseCase;
 
+    @MockitoBean
+    private GetFranchiseByIdUseCase getFranchiseByIdUseCase;
+
+    @MockitoBean
+    private UpdateFranchiseNameUseCase updateFranchiseNameUseCase;
+
     @Value("${api.paths.franchises}")
     private String franchisesPath;
 
@@ -45,7 +53,7 @@ class RouterRestTest {
         @DisplayName("should route POST to FranchiseHandler and return 201")
         void shouldRouteToHandler() {
             Franchise saved = new Franchise("uuid-1", Optional.of("My Franchise"));
-            when(saveFranchiseUseCase.save(any())).thenReturn(Mono.just(saved));
+            when(saveFranchiseUseCase.run(any())).thenReturn(Mono.just(saved));
 
             webTestClient.post()
                     .uri(franchisesPath)

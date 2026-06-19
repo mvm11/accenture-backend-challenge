@@ -16,34 +16,43 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class SaveFranchiseUseCaseTest {
+class GetFranchiseByIdUseCaseTest {
 
     @InjectMocks
-    SaveFranchiseUseCase useCase;
+    GetFranchiseByIdUseCase useCase;
 
     @Mock
     FranchiseRepository repository;
 
     @Test
-    void shouldRunFranchiseSuccessfully() {
+    void shouldFindFranchiseByIdSuccessfully() {
         Franchise franchise = new Franchise("id-1", Optional.of("Test Franchise"));
-        when(repository.saveFranchise(franchise)).thenReturn(Mono.just(franchise));
+        when(repository.findFranchiseById("id-1")).thenReturn(Mono.just(franchise));
 
-        StepVerifier.create(useCase.run(franchise))
-                .expectNextMatches(saved -> saved.id().equals("id-1")
-                        && saved.name().equals(Optional.of("Test Franchise")))
+        StepVerifier.create(useCase.run("id-1"))
+                .expectNextMatches(found -> found.id().equals("id-1")
+                        && found.name().equals(Optional.of("Test Franchise")))
                 .verifyComplete();
 
-        verify(repository).saveFranchise(franchise);
+        verify(repository).findFranchiseById("id-1");
+    }
+
+    @Test
+    void shouldReturnEmptyWhenFranchiseNotFound() {
+        when(repository.findFranchiseById("unknown-id")).thenReturn(Mono.empty());
+
+        StepVerifier.create(useCase.run("unknown-id"))
+                .verifyComplete();
+
+        verify(repository).findFranchiseById("unknown-id");
     }
 
     @Test
     void shouldPropagateErrorFromRepository() {
-        Franchise franchise = new Franchise("id-1", Optional.of("Test Franchise"));
         RuntimeException error = new RuntimeException("DB connection failed");
-        when(repository.saveFranchise(franchise)).thenReturn(Mono.error(error));
+        when(repository.findFranchiseById("id-1")).thenReturn(Mono.error(error));
 
-        StepVerifier.create(useCase.run(franchise))
+        StepVerifier.create(useCase.run("id-1"))
                 .expectErrorMatches(ex -> ex instanceof RuntimeException
                         && ex.getMessage().equals("DB connection failed"))
                 .verify();

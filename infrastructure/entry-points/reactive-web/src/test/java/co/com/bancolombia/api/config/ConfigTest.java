@@ -2,7 +2,9 @@ package co.com.bancolombia.api.config;
 
 import co.com.bancolombia.api.RouterRest;
 import co.com.bancolombia.api.franchise.FranchiseHandler;
+import co.com.bancolombia.usecase.savefranchise.GetFranchiseByIdUseCase;
 import co.com.bancolombia.usecase.savefranchise.SaveFranchiseUseCase;
+import co.com.bancolombia.usecase.savefranchise.UpdateFranchiseNameUseCase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,12 @@ class ConfigTest {
 
     @MockitoBean
     private SaveFranchiseUseCase saveFranchiseUseCase;
+
+    @MockitoBean
+    private GetFranchiseByIdUseCase getFranchiseByIdUseCase;
+
+    @MockitoBean
+    private UpdateFranchiseNameUseCase updateFranchiseNameUseCase;
 
     @Test
     @DisplayName("SecurityHeadersConfig filter should add security headers to every response")
