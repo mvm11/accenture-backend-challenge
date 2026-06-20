@@ -1,47 +1,175 @@
-# Proyecto Base Implementando Clean Architecture
+# Franchise Management API
 
-## Antes de Iniciar
+A reactive REST API for managing franchises, their branches, and the products available at each branch. Built with Spring WebFlux and Clean Architecture principles.
 
-Empezaremos por explicar los diferentes componentes del proyectos y partiremos de los componentes externos, continuando con los componentes core de negocio (dominio) y por último el inicio y configuración de la aplicación.
+## What it does
 
-Lee el artículo [Clean Architecture — Aislando los detalles](https://medium.com/bancolombia-tech/clean-architecture-aislando-los-detalles-4f9530f35d7a)
+The API models a three-level hierarchy:
 
-# Arquitectura
+- **Franchise** — a top-level brand or company
+- **Branch** — a physical location that belongs to a franchise
+- **Product** — an item with a stock level available at a branch
 
-![Clean Architecture](https://miro.medium.com/max/1400/1*ZdlHz8B0-qu9Y-QO3AXR_w.png)
+It lets you create and update entities at each level, and query which product has the highest stock at each branch for a given franchise.
 
-## Domain
+## Tech stack
 
-Es el módulo más interno de la arquitectura, pertenece a la capa del dominio y encapsula la lógica y reglas del negocio mediante modelos y entidades del dominio.
+| Layer | Technology |
+|---|---|
+| Language | Java 25 |
+| Framework | Spring Boot 3 + Spring WebFlux (reactive) |
+| Database | PostgreSQL 16 (via R2DBC) |
+| Build tool | Gradle |
+| Containerisation | Docker / Docker Compose |
 
-## Usecases
+## Prerequisites
 
-Este módulo gradle perteneciente a la capa del dominio, implementa los casos de uso del sistema, define lógica de aplicación y reacciona a las invocaciones desde el módulo de entry points, orquestando los flujos hacia el módulo de entities.
+- Java 25
+- Docker and Docker Compose (for the recommended setup)
+- PostgreSQL 16 (if running locally without Docker)
 
-## Infrastructure
+## Environment variables
 
-### Helpers
+| Variable | Default | Description |
+|---|---|---|
+| `DB_HOST` | `localhost` | Database host |
+| `DB_PORT` | `5432` | Database port |
+| `DB_NAME` | `franchise_db` | Database name |
+| `DB_USER` | `franchise_user` | Database user |
+| `DB_PASSWORD` | `franchise_pass` | Database password |
 
-En el apartado de helpers tendremos utilidades generales para los Driven Adapters y Entry Points.
+Copy the included `.env` file and adjust values as needed — Docker Compose reads it automatically.
 
-Estas utilidades no están arraigadas a objetos concretos, se realiza el uso de generics para modelar comportamientos
-genéricos de los diferentes objetos de persistencia que puedan existir, este tipo de implementaciones se realizan
-basadas en el patrón de diseño [Unit of Work y Repository](https://medium.com/@krzychukosobudzki/repository-design-pattern-bc490b256006)
+```bash
+cp .env .env.local  # optional: keep your own values separate
+```
 
-Estas clases no puede existir solas y debe heredarse su compartimiento en los **Driven Adapters**
+## Running with Docker Compose (recommended)
 
-### Driven Adapters
+This starts both the application and a PostgreSQL instance:
 
-Los driven adapter representan implementaciones externas a nuestro sistema, como lo son conexiones a servicios rest,
-soap, bases de datos, lectura de archivos planos, y en concreto cualquier origen y fuente de datos con la que debamos
-interactuar.
+```bash
+docker compose up --build
+```
 
-### Entry Points
+The API will be available at `http://localhost:8080`.
 
-Los entry points representan los puntos de entrada de la aplicación o el inicio de los flujos de negocio.
+To stop and remove containers:
 
-## Application
+```bash
+docker compose down
+```
 
-Este módulo es el más externo de la arquitectura, es el encargado de ensamblar los distintos módulos, resolver las dependencias y crear los beans de los casos de use (UseCases) de forma automática, inyectando en éstos instancias concretas de las dependencias declaradas. Además inicia la aplicación (es el único módulo del proyecto donde encontraremos la función “public static void main(String[] args)”.
+To also remove the database volume:
 
-**Los beans de los casos de uso se disponibilizan automaticamente gracias a un '@ComponentScan' ubicado en esta capa.**
+```bash
+docker compose down -v
+```
+
+## Running locally
+
+1. Make sure a PostgreSQL instance is running and reachable.
+2. Export the environment variables (or rely on the defaults):
+
+```bash
+export DB_HOST=localhost
+export DB_PORT=5432
+export DB_NAME=franchise_db
+export DB_USER=franchise_user
+export DB_PASSWORD=franchise_pass
+```
+
+3. Build and run:
+
+```bash
+./gradlew bootRun
+```
+
+## Running tests
+
+```bash
+./gradlew test
+```
+
+## Building the JAR
+
+```bash
+./gradlew bootJar -x test
+```
+
+The output is placed at `applications/app-service/build/libs/`.
+
+## API endpoints
+
+Base path: `/api/v1/franchises`
+
+### Franchises
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/v1/franchises` | Create a franchise |
+| `GET` | `/api/v1/franchises/{id}` | Get a franchise by ID |
+| `PATCH` | `/api/v1/franchises/{id}` | Update a franchise name |
+
+### Branches
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/v1/franchises/{franchiseId}/branches` | Add a branch to a franchise |
+| `GET` | `/api/v1/franchises/{franchiseId}/branches/{id}` | Get a branch by ID |
+| `PATCH` | `/api/v1/franchises/{franchiseId}/branches/{id}` | Update a branch name |
+
+### Products
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/v1/franchises/{franchiseId}/branches/{branchId}/products` | Add a product to a branch |
+| `GET` | `/api/v1/franchises/{franchiseId}/branches/{branchId}/products/{id}` | Get a product by ID |
+| `PATCH` | `/api/v1/franchises/{franchiseId}/branches/{branchId}/products/{id}/name` | Update a product name |
+| `PATCH` | `/api/v1/franchises/{franchiseId}/branches/{branchId}/products/{id}/stock` | Update a product stock |
+| `DELETE` | `/api/v1/franchises/{franchiseId}/branches/{branchId}/products/{id}` | Remove a product from a branch |
+
+### Reports
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/v1/franchises/{franchiseId}/branches/products/top-stock` | Get the product with the highest stock per branch for a franchise |
+
+### Request bodies
+
+**Create / update franchise or branch:**
+```json
+{ "name": "My Franchise" }
+```
+
+**Create product:**
+```json
+{ "name": "Coffee", "stock": 150 }
+```
+
+**Update product name:**
+```json
+{ "name": "Espresso" }
+```
+
+**Update product stock:**
+```json
+{ "stock": 200 }
+```
+
+## Project structure
+
+The project follows Clean Architecture, organized into Gradle modules:
+
+```
+domain/model          — entities and business rules (no framework dependencies)
+domain/usecase        — application use cases
+infrastructure/
+  driven-adapters/    — database adapters (R2DBC repositories)
+  entry-points/       — HTTP handlers and router (Spring WebFlux)
+applications/         — application wiring and Spring Boot entry point
+```
+
+## CI
+
+GitHub Actions runs compile and test on every push and pull request targeting `main`, `develop`, `feature/**`, `release/**`, and `hotfix/**` branches.
