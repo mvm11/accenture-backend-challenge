@@ -8,6 +8,7 @@ import co.com.bancolombia.usecase.branch.FindBranchByIdUseCase;
 import co.com.bancolombia.usecase.branch.SaveBranchUseCase;
 import co.com.bancolombia.usecase.branch.UpdateBranchNameUseCase;
 import co.com.bancolombia.usecase.franchise.GetFranchiseByIdUseCase;
+import co.com.bancolombia.usecase.franchise.GetTopStockProductPerBranchUseCase;
 import co.com.bancolombia.usecase.franchise.SaveFranchiseUseCase;
 import co.com.bancolombia.usecase.franchise.UpdateFranchiseNameUseCase;
 import co.com.bancolombia.usecase.product.DeleteProductUseCase;
@@ -39,11 +40,21 @@ class ProductHandlerTest {
     private static final String FRANCHISE_ID = "franchise-1";
     private static final String BRANCH_ID = "branch-1";
     private static final String PRODUCT_ID = "product-1";
+    private static final String UNKNOWN_ID = "unknown-id";
     private static final String PRODUCT_NAME = "My Product";
     private static final String NEW_NAME = "Updated Product";
     private static final BigInteger STOCK = BigInteger.TEN;
     private static final BigInteger NEW_STOCK = BigInteger.valueOf(99);
     private static final String UNEXPECTED_FAILURE = "unexpected failure";
+    private static final String JSON_PATH_NAME = "$.name";
+    private static final String NAME_SUFFIX = "/name";
+    private static final String STOCK_SUFFIX = "/stock";
+    private static final String UPDATE_NAME_BODY = """
+            {"name": "Updated Product"}
+            """;
+    private static final String UPDATE_STOCK_BODY = """
+            {"stock": 99}
+            """;
 
     private static final Product PRODUCT = new Product(PRODUCT_ID, PRODUCT_NAME, STOCK);
 
@@ -58,6 +69,9 @@ class ProductHandlerTest {
 
     @MockitoBean
     private UpdateFranchiseNameUseCase updateFranchiseNameUseCase;
+
+    @MockitoBean
+    private GetTopStockProductPerBranchUseCase getTopStockProductPerBranchUseCase;
 
     @MockitoBean
     private SaveBranchUseCase saveBranchUseCase;
@@ -110,7 +124,7 @@ class ProductHandlerTest {
                     .expectStatus().isCreated()
                     .expectBody()
                     .jsonPath("$.id").isEqualTo(PRODUCT_ID)
-                    .jsonPath("$.name").isEqualTo(PRODUCT_NAME);
+                    .jsonPath(JSON_PATH_NAME).isEqualTo(PRODUCT_NAME);
         }
     }
 
@@ -163,7 +177,7 @@ class ProductHandlerTest {
                     .expectStatus().isOk()
                     .expectBody()
                     .jsonPath("$.id").isEqualTo(PRODUCT_ID)
-                    .jsonPath("$.name").isEqualTo(PRODUCT_NAME);
+                    .jsonPath(JSON_PATH_NAME).isEqualTo(PRODUCT_NAME);
         }
     }
 
@@ -174,10 +188,10 @@ class ProductHandlerTest {
         @Test
         @DisplayName("should return 404 when product is not found")
         void shouldReturn404WhenNotFound() {
-            when(getProductByIdUseCase.run(FRANCHISE_ID, BRANCH_ID, "unknown-id")).thenReturn(Mono.empty());
+            when(getProductByIdUseCase.run(FRANCHISE_ID, BRANCH_ID, UNKNOWN_ID)).thenReturn(Mono.empty());
 
             webTestClient.get()
-                    .uri(productsPath() + "/unknown-id")
+                    .uri(productsPath() + "/" + UNKNOWN_ID)
                     .exchange()
                     .expectStatus().isNotFound();
         }
@@ -212,16 +226,14 @@ class ProductHandlerTest {
                     .thenReturn(Mono.just(updated));
 
             webTestClient.patch()
-                    .uri(productPath() + "/name")
+                    .uri(productPath() + NAME_SUFFIX)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue("""
-                            {"name": "Updated Product"}
-                            """)
+                    .bodyValue(UPDATE_NAME_BODY)
                     .exchange()
                     .expectStatus().isOk()
                     .expectBody()
                     .jsonPath("$.id").isEqualTo(PRODUCT_ID)
-                    .jsonPath("$.name").isEqualTo(NEW_NAME);
+                    .jsonPath(JSON_PATH_NAME).isEqualTo(NEW_NAME);
         }
     }
 
@@ -232,15 +244,13 @@ class ProductHandlerTest {
         @Test
         @DisplayName("should return 404 when product is not found")
         void shouldReturn404WhenNotFound() {
-            when(updateProductUseCase.updateName(FRANCHISE_ID, BRANCH_ID, "unknown-id", NEW_NAME))
+            when(updateProductUseCase.updateName(FRANCHISE_ID, BRANCH_ID, UNKNOWN_ID, NEW_NAME))
                     .thenReturn(Mono.empty());
 
             webTestClient.patch()
-                    .uri(productsPath() + "/unknown-id/name")
+                    .uri(productsPath() + "/" + UNKNOWN_ID + NAME_SUFFIX)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue("""
-                            {"name": "Updated Product"}
-                            """)
+                    .bodyValue(UPDATE_NAME_BODY)
                     .exchange()
                     .expectStatus().isNotFound();
         }
@@ -257,11 +267,9 @@ class ProductHandlerTest {
                     .thenReturn(Mono.error(new RuntimeException(UNEXPECTED_FAILURE)));
 
             webTestClient.patch()
-                    .uri(productPath() + "/name")
+                    .uri(productPath() + NAME_SUFFIX)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue("""
-                            {"name": "Updated Product"}
-                            """)
+                    .bodyValue(UPDATE_NAME_BODY)
                     .exchange()
                     .expectStatus().is5xxServerError();
         }
@@ -279,11 +287,9 @@ class ProductHandlerTest {
                     .thenReturn(Mono.just(updated));
 
             webTestClient.patch()
-                    .uri(productPath() + "/stock")
+                    .uri(productPath() + STOCK_SUFFIX)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue("""
-                            {"stock": 99}
-                            """)
+                    .bodyValue(UPDATE_STOCK_BODY)
                     .exchange()
                     .expectStatus().isOk()
                     .expectBody()
@@ -299,15 +305,13 @@ class ProductHandlerTest {
         @Test
         @DisplayName("should return 404 when product is not found")
         void shouldReturn404WhenNotFound() {
-            when(updateProductUseCase.updateStock(FRANCHISE_ID, BRANCH_ID, "unknown-id", NEW_STOCK))
+            when(updateProductUseCase.updateStock(FRANCHISE_ID, BRANCH_ID, UNKNOWN_ID, NEW_STOCK))
                     .thenReturn(Mono.empty());
 
             webTestClient.patch()
-                    .uri(productsPath() + "/unknown-id/stock")
+                    .uri(productsPath() + "/" + UNKNOWN_ID + STOCK_SUFFIX)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue("""
-                            {"stock": 99}
-                            """)
+                    .bodyValue(UPDATE_STOCK_BODY)
                     .exchange()
                     .expectStatus().isNotFound();
         }
@@ -324,11 +328,9 @@ class ProductHandlerTest {
                     .thenReturn(Mono.error(new RuntimeException(UNEXPECTED_FAILURE)));
 
             webTestClient.patch()
-                    .uri(productPath() + "/stock")
+                    .uri(productPath() + STOCK_SUFFIX)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue("""
-                            {"stock": 99}
-                            """)
+                    .bodyValue(UPDATE_STOCK_BODY)
                     .exchange()
                     .expectStatus().is5xxServerError();
         }
@@ -359,10 +361,10 @@ class ProductHandlerTest {
         @Test
         @DisplayName("should return 404 when product is not found")
         void shouldReturn404WhenNotFound() {
-            when(deleteProductUseCase.run(FRANCHISE_ID, BRANCH_ID, "unknown-id")).thenReturn(Mono.empty());
+            when(deleteProductUseCase.run(FRANCHISE_ID, BRANCH_ID, UNKNOWN_ID)).thenReturn(Mono.empty());
 
             webTestClient.delete()
-                    .uri(productsPath() + "/unknown-id")
+                    .uri(productsPath() + "/" + UNKNOWN_ID)
                     .exchange()
                     .expectStatus().isNotFound();
         }

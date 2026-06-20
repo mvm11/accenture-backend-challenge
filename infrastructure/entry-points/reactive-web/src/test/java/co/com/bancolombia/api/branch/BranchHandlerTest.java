@@ -10,6 +10,7 @@ import co.com.bancolombia.usecase.branch.UpdateBranchNameUseCase;
 import co.com.bancolombia.usecase.franchise.GetFranchiseByIdUseCase;
 import co.com.bancolombia.usecase.franchise.SaveFranchiseUseCase;
 import co.com.bancolombia.usecase.franchise.UpdateFranchiseNameUseCase;
+import co.com.bancolombia.usecase.franchise.GetTopStockProductPerBranchUseCase;
 import co.com.bancolombia.usecase.product.DeleteProductUseCase;
 import co.com.bancolombia.usecase.product.GetProductByIdUseCase;
 import co.com.bancolombia.usecase.product.SaveProductUseCase;
@@ -76,6 +77,9 @@ class BranchHandlerTest {
 
     @MockitoBean
     private DeleteProductUseCase deleteProductUseCase;
+
+    @MockitoBean
+    private GetTopStockProductPerBranchUseCase getTopStockProductPerBranchUseCase;
 
     @Value("${api.paths.franchises}")
     private String franchisesPath;
