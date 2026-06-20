@@ -11,7 +11,7 @@ class FranchiseTest {
 
     @Test
     void shouldCreateFranchiseSuccessfully() {
-        Franchise franchise = new Franchise("id-1", Optional.of("Franchise Name"));
+        Franchise franchise = new Franchise("id-1", Optional.of("Franchise Name"), null);
 
         assertEquals("id-1", franchise.id());
         assertEquals(Optional.of("Franchise Name"), franchise.name());
@@ -20,7 +20,7 @@ class FranchiseTest {
     @Test
     void shouldThrowWhenNameIsEmpty() {
         InvalidFranchiseException ex = assertThrows(InvalidFranchiseException.class,
-                () -> new Franchise("id-1", Optional.of("")));
+                () -> new Franchise("id-1", Optional.of(""), null));
 
         assertEquals("Franchise name must not be empty", ex.getMessage());
     }
@@ -28,7 +28,7 @@ class FranchiseTest {
     @Test
     void shouldThrowWhenNameIsBlank() {
         InvalidFranchiseException ex = assertThrows(InvalidFranchiseException.class,
-                () -> new Franchise("id-1", Optional.of("   ")));
+                () -> new Franchise("id-1", Optional.of("   "), null));
 
         assertEquals("Franchise name must not be empty", ex.getMessage());
     }
@@ -36,6 +36,6 @@ class FranchiseTest {
     @Test
     void shouldThrowWhenNameIsAbsent() {
         assertThrows(InvalidFranchiseException.class,
-                () -> new Franchise("id-1", Optional.empty()));
+                () -> new Franchise("id-1", Optional.empty(), null));
     }
 }

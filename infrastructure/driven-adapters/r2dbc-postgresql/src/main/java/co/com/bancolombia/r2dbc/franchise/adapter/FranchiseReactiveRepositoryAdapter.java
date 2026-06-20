@@ -51,7 +51,7 @@ public class FranchiseReactiveRepositoryAdapter
     }
 
     private static Franchise toFranchise(FranchiseEntity entity) {
-        return new Franchise(entity.getId(), Optional.ofNullable(entity.getName()));
+        return new Franchise(entity.getId(), Optional.ofNullable(entity.getName()), null);
     }
 
     private static FranchiseEntity getFranchiseEntity(String name, String uuidV7) {

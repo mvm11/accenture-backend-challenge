@@ -1,4 +1,4 @@
-package co.com.bancolombia.usecase.savefranchise;
+package co.com.bancolombia.usecase.franchise;
 
 import co.com.bancolombia.model.franchise.Franchise;
 import co.com.bancolombia.model.franchise.gateways.FranchiseRepository;
@@ -26,7 +26,7 @@ class SaveFranchiseUseCaseTest {
 
     @Test
     void shouldRunFranchiseSuccessfully() {
-        Franchise franchise = new Franchise("id-1", Optional.of("Test Franchise"));
+        Franchise franchise = new Franchise("id-1", Optional.of("Test Franchise"), null);
         when(repository.saveFranchise(franchise)).thenReturn(Mono.just(franchise));
 
         StepVerifier.create(useCase.run(franchise))
@@ -39,7 +39,7 @@ class SaveFranchiseUseCaseTest {
 
     @Test
     void shouldPropagateErrorFromRepository() {
-        Franchise franchise = new Franchise("id-1", Optional.of("Test Franchise"));
+        Franchise franchise = new Franchise("id-1", Optional.of("Test Franchise"), null);
         RuntimeException error = new RuntimeException("DB connection failed");
         when(repository.saveFranchise(franchise)).thenReturn(Mono.error(error));
 

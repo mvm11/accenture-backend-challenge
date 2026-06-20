@@ -47,7 +47,7 @@ class FranchiseReactiveRepositoryAdapterTest {
 
     @BeforeEach
     void setUp() {
-        domainFranchise = new Franchise(DOMAIN_ID, Optional.of(FRANCHISE_NAME));
+        domainFranchise = new Franchise(DOMAIN_ID, Optional.of(FRANCHISE_NAME), null);
 
         persistedEntity = FranchiseEntity.builder().id(PERSISTED_ID).name(FRANCHISE_NAME).isNew(true).build();
     }
