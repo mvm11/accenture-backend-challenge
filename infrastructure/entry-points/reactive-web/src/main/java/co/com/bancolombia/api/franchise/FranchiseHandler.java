@@ -1,9 +1,9 @@
 package co.com.bancolombia.api.franchise;
 
 import co.com.bancolombia.model.franchise.Franchise;
-import co.com.bancolombia.usecase.savefranchise.GetFranchiseByIdUseCase;
-import co.com.bancolombia.usecase.savefranchise.SaveFranchiseUseCase;
-import co.com.bancolombia.usecase.savefranchise.UpdateFranchiseNameUseCase;
+import co.com.bancolombia.usecase.franchise.GetFranchiseByIdUseCase;
+import co.com.bancolombia.usecase.franchise.SaveFranchiseUseCase;
+import co.com.bancolombia.usecase.franchise.UpdateFranchiseNameUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -22,7 +22,7 @@ public class FranchiseHandler {
 
     public Mono<ServerResponse> createFranchise(ServerRequest request) {
         return request.bodyToMono(FranchiseRequest.class)
-                .map(dto -> new Franchise(null, Optional.ofNullable(dto.name())))
+                .map(dto -> new Franchise(null, Optional.ofNullable(dto.name()), null))
                 .flatMap(saveFranchiseUseCase::run)
                 .flatMap(saved -> ServerResponse.status(201).bodyValue(saved));
     }

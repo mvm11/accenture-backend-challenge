@@ -1,10 +1,14 @@
 package co.com.bancolombia.api;
 
+import co.com.bancolombia.api.branch.BranchHandler;
 import co.com.bancolombia.api.franchise.FranchiseHandler;
 import co.com.bancolombia.model.franchise.Franchise;
-import co.com.bancolombia.usecase.savefranchise.GetFranchiseByIdUseCase;
-import co.com.bancolombia.usecase.savefranchise.SaveFranchiseUseCase;
-import co.com.bancolombia.usecase.savefranchise.UpdateFranchiseNameUseCase;
+import co.com.bancolombia.usecase.branch.FindBranchByIdUseCase;
+import co.com.bancolombia.usecase.branch.SaveBranchUseCase;
+import co.com.bancolombia.usecase.branch.UpdateBranchNameUseCase;
+import co.com.bancolombia.usecase.franchise.GetFranchiseByIdUseCase;
+import co.com.bancolombia.usecase.franchise.SaveFranchiseUseCase;
+import co.com.bancolombia.usecase.franchise.UpdateFranchiseNameUseCase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,7 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @WebFluxTest
-@ContextConfiguration(classes = {RouterRest.class, FranchiseHandler.class})
+@ContextConfiguration(classes = {RouterRest.class, FranchiseHandler.class, BranchHandler.class})
 class RouterRestTest {
 
     @Autowired
@@ -37,6 +41,15 @@ class RouterRestTest {
 
     @MockitoBean
     private UpdateFranchiseNameUseCase updateFranchiseNameUseCase;
+
+    @MockitoBean
+    private SaveBranchUseCase saveBranchUseCase;
+
+    @MockitoBean
+    private FindBranchByIdUseCase findBranchByIdUseCase;
+
+    @MockitoBean
+    private UpdateBranchNameUseCase updateBranchNameUseCase;
 
     @Value("${api.paths.franchises}")
     private String franchisesPath;
@@ -52,7 +65,7 @@ class RouterRestTest {
         @Test
         @DisplayName("should route POST to FranchiseHandler and return 201")
         void shouldRouteToHandler() {
-            Franchise saved = new Franchise("uuid-1", Optional.of("My Franchise"));
+            Franchise saved = new Franchise("uuid-1", Optional.of("My Franchise"), null);
             when(saveFranchiseUseCase.run(any())).thenReturn(Mono.just(saved));
 
             webTestClient.post()
@@ -87,7 +100,7 @@ class RouterRestTest {
         @DisplayName("should return 404 for POST to an unregistered path")
         void shouldReturn404ForUnknownPath() {
             webTestClient.post()
-                    .uri(franchisesPath + "/nonexistent")
+                    .uri("/unknown-path")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(VALID_BODY)
                     .exchange()
