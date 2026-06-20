@@ -28,7 +28,7 @@ class SaveBranchUseCaseTest {
     @Test
     @DisplayName("should delegate to repository and return saved branch")
     void shouldSaveBranchSuccessfully() {
-        Branch branch = new Branch("id-1", Optional.of("Test Branch"));
+        Branch branch = new Branch("id-1", Optional.of("Test Branch"), null);
         when(repository.saveBranch("franchise-1", branch)).thenReturn(Mono.just(branch));
 
         StepVerifier.create(useCase.run("franchise-1", branch))
@@ -42,7 +42,7 @@ class SaveBranchUseCaseTest {
     @Test
     @DisplayName("should propagate error from repository")
     void shouldPropagateErrorFromRepository() {
-        Branch branch = new Branch("id-1", Optional.of("Test Branch"));
+        Branch branch = new Branch("id-1", Optional.of("Test Branch"), null);
         RuntimeException error = new RuntimeException("DB connection failed");
         when(repository.saveBranch("franchise-1", branch)).thenReturn(Mono.error(error));
 

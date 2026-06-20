@@ -3,12 +3,17 @@ package co.com.bancolombia.api.config;
 import co.com.bancolombia.api.RouterRest;
 import co.com.bancolombia.api.branch.BranchHandler;
 import co.com.bancolombia.api.franchise.FranchiseHandler;
+import co.com.bancolombia.api.product.ProductHandler;
 import co.com.bancolombia.usecase.branch.FindBranchByIdUseCase;
 import co.com.bancolombia.usecase.branch.SaveBranchUseCase;
 import co.com.bancolombia.usecase.branch.UpdateBranchNameUseCase;
 import co.com.bancolombia.usecase.franchise.GetFranchiseByIdUseCase;
 import co.com.bancolombia.usecase.franchise.SaveFranchiseUseCase;
 import co.com.bancolombia.usecase.franchise.UpdateFranchiseNameUseCase;
+import co.com.bancolombia.usecase.product.DeleteProductUseCase;
+import co.com.bancolombia.usecase.product.GetProductByIdUseCase;
+import co.com.bancolombia.usecase.product.SaveProductUseCase;
+import co.com.bancolombia.usecase.product.UpdateProductUseCase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +24,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 @WebFluxTest
-@ContextConfiguration(classes = {RouterRest.class, FranchiseHandler.class, BranchHandler.class})
+@ContextConfiguration(classes = {RouterRest.class, FranchiseHandler.class, BranchHandler.class, ProductHandler.class})
 @Import({CorsConfig.class, SecurityHeadersConfig.class})
 class ConfigTest {
 
@@ -43,6 +48,18 @@ class ConfigTest {
 
     @MockitoBean
     private UpdateBranchNameUseCase updateBranchNameUseCase;
+
+    @MockitoBean
+    private SaveProductUseCase saveProductUseCase;
+
+    @MockitoBean
+    private GetProductByIdUseCase getProductByIdUseCase;
+
+    @MockitoBean
+    private UpdateProductUseCase updateProductUseCase;
+
+    @MockitoBean
+    private DeleteProductUseCase deleteProductUseCase;
 
     @Test
     @DisplayName("SecurityHeadersConfig filter should add security headers to every response")

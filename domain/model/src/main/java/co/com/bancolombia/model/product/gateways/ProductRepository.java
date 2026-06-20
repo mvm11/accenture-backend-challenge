@@ -12,7 +12,7 @@ public interface ProductRepository {
 
     Flux<Product> findProductsByBranchId(String branchId);
 
-    Mono<Product> saveProduct(String franchiseId, Product product);
+    Mono<Product> saveProduct(String branchId, Product product);
 
     Mono<Product> updateProductName(String franchiseId, String branchId, String productId, String name);
 

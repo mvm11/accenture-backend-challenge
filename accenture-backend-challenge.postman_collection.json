@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "c3f1a2b4-d5e6-7f89-a0bc-de1234567890",
     "name": "Accenture Backend Challenge API",
-    "description": "## Overview\nComplete API collection for the Accenture Backend Challenge — a reactive REST service built with Spring WebFlux and R2DBC PostgreSQL.\n\nThe API manages a two-level domain hierarchy:\n- **Franchise** — a top-level brand (e.g. a restaurant chain).\n- **Branch** — a physical location that belongs to exactly one franchise.\n\n---\n\n## Quick Start\n1. Start the application (`./gradlew bootRun`) and PostgreSQL (`docker compose up -d`).\n2. Verify the service is healthy using **03 - Health → 01 - Health Check**.\n3. Run **01 - Franchises → 01 - Create Franchise** — the returned `id` is automatically saved to the `{{franchiseId}}` collection variable.\n4. Run **02 - Branches → 01 - Create Branch** — the returned `id` is automatically saved to the `{{branchId}}` collection variable.\n5. All subsequent requests resolve `{{franchiseId}}` and `{{branchId}}` from those variables.\n\n---\n\n## Collection Variables\n| Variable | Default | Description |\n|---|---|---|\n| `baseUrl` | `http://localhost:8080` | Base URL of the running server |\n| `franchiseId` | _(auto-set)_ | ID populated after Create Franchise |\n| `branchId` | _(auto-set)_ | ID populated after Create Branch |\n\n---\n\n## Common Response Codes\n| Code | Meaning |\n|---|---|\n| `200 OK` | Successful GET or PATCH |\n| `201 Created` | Successful POST (resource created) |\n| `404 Not Found` | Resource with the given ID does not exist |\n| `500 Internal Server Error` | Validation failure or unexpected error |",
+    "description": "## Overview\nComplete API collection for the Accenture Backend Challenge — a reactive REST service built with Spring WebFlux and R2DBC PostgreSQL.\n\nThe API manages a three-level domain hierarchy:\n- **Franchise** — a top-level brand (e.g. a restaurant chain).\n- **Branch** — a physical location that belongs to exactly one franchise.\n- **Product** — an item sold at a branch, with a name and a stock quantity.\n\n---\n\n## Quick Start\n1. Start the application (`./gradlew bootRun`) and PostgreSQL (`docker compose up -d`).\n2. Verify the service is healthy using **04 - Health → 01 - Health Check**.\n3. Run **01 - Franchises → 01 - Create Franchise** — the returned `id` is automatically saved to `{{franchiseId}}`.\n4. Run **02 - Branches → 01 - Create Branch** — the returned `id` is automatically saved to `{{branchId}}`.\n5. Run **03 - Products → 01 - Create Product** — the returned `id` is automatically saved to `{{productId}}`.\n6. All subsequent requests resolve the relevant variables automatically.\n\n---\n\n## Collection Variables\n| Variable | Default | Description |\n|---|---|---|\n| `baseUrl` | `http://localhost:8080` | Base URL of the running server |\n| `franchiseId` | _(auto-set)_ | ID populated after Create Franchise |\n| `branchId` | _(auto-set)_ | ID populated after Create Branch |\n| `productId` | _(auto-set)_ | ID populated after Create Product |\n\n---\n\n## Common Response Codes\n| Code | Meaning |\n|---|---|\n| `200 OK` | Successful GET, PATCH, or DELETE |\n| `201 Created` | Successful POST (resource created) |\n| `404 Not Found` | Resource with the given ID does not exist |\n| `500 Internal Server Error` | Validation failure or unexpected error |",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -23,6 +23,12 @@
       "value": "",
       "type": "string",
       "description": "ID of the branch currently under test. Automatically populated by the 'Create Branch' request test script."
+    },
+    {
+      "key": "productId",
+      "value": "",
+      "type": "string",
+      "description": "ID of the product currently under test. Automatically populated by the 'Create Product' request test script."
     }
   ],
   "item": [
@@ -675,7 +681,440 @@
       ]
     },
     {
-      "name": "03 - Health",
+      "name": "03 - Products",
+      "description": "Endpoints for managing products within a branch.\n\nA **product** is an item sold at a branch, identified by a UUID. It has a name and a stock quantity (integer). Product routes are nested under their parent branch:\n`/api/v1/franchises/{franchiseId}/branches/{branchId}/products`\n\n> **Prerequisites:** run **01 - Create Franchise** and **02 - Create Branch** first so that `{{franchiseId}}` and `{{branchId}}` are set.",
+      "item": [
+        {
+          "name": "01 - Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "Request body must be JSON"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Classic Burger\",\n  \"stock\": 50\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products"]
+            },
+            "description": "Creates a new product under the branch identified by `{{branchId}}`.\n\nThe server generates a UUID v7 as the product `id`. The `id` is captured automatically by the test script and stored in the `{{productId}}` collection variable.\n\n**Path parameters:**\n| Parameter | Description |\n|---|---|\n| `franchiseId` | UUID of the parent franchise |\n| `branchId` | UUID of the parent branch |\n\n**Validation rules:**\n- `name` must be present and non-blank.\n- `stock` must be present and non-null.\n\n**Example request body:**\n```json\n{\n  \"name\": \"Classic Burger\",\n  \"stock\": 50\n}\n```\n\n**Example response (201):**\n```json\n{\n  \"id\": \"018f3d4e-5f6a-7b8c-c9d0-e1f2a3b4c5d6\",\n  \"name\": \"Classic Burger\",\n  \"stock\": 50\n}\n```"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains an id', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response name matches the request', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.name).to.eql('Classic Burger');",
+                  "});",
+                  "",
+                  "pm.test('Response stock matches the request', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.stock).to.eql(50);",
+                  "});",
+                  "",
+                  "// Auto-save the product id for subsequent requests",
+                  "var json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "    pm.collectionVariables.set('productId', json.id);",
+                  "    console.log('productId set to: ' + json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "201 - Product Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Classic Burger\",\n  \"stock\": 50\n}",
+                  "options": {"raw": {"language": "json"}}
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"id\": \"018f3d4e-5f6a-7b8c-c9d0-e1f2a3b4c5d6\",\n  \"name\": \"Classic Burger\",\n  \"stock\": 50\n}"
+            },
+            {
+              "name": "500 - Blank Name",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"\",\n  \"stock\": 50\n}",
+                  "options": {"raw": {"language": "json"}}
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products"]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"status\": 500,\n  \"error\": \"Internal Server Error\",\n  \"message\": \"Product name must not be empty\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "02 - Get Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products", "{{productId}}"]
+            },
+            "description": "Retrieves a single product by its ID within the given branch.\n\nUses `{{franchiseId}}`, `{{branchId}}`, and `{{productId}}` collection variables.\n\n**Path parameters:**\n| Parameter | Description |\n|---|---|\n| `franchiseId` | UUID of the parent franchise |\n| `branchId` | UUID of the parent branch |\n| `id` | UUID of the product |\n\n**Example response (200):**\n```json\n{\n  \"id\": \"018f3d4e-5f6a-7b8c-c9d0-e1f2a3b4c5d6\",\n  \"name\": \"Classic Burger\",\n  \"stock\": 50\n}\n```"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response id matches the requested productId', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.eql(pm.collectionVariables.get('productId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "200 - Product Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products/{{productId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products", "{{productId}}"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"id\": \"018f3d4e-5f6a-7b8c-c9d0-e1f2a3b4c5d6\",\n  \"name\": \"Classic Burger\",\n  \"stock\": 50\n}"
+            },
+            {
+              "name": "404 - Product Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products/non-existent-id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products", "non-existent-id"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "03 - Update Product Name",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "Request body must be JSON"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Classic Burger Deluxe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products/{{productId}}/name",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products", "{{productId}}", "name"]
+            },
+            "description": "Updates only the name of an existing product.\n\nUses `{{franchiseId}}`, `{{branchId}}`, and `{{productId}}` collection variables.\n\n**Path parameters:**\n| Parameter | Description |\n|---|---|\n| `franchiseId` | UUID of the parent franchise |\n| `branchId` | UUID of the parent branch |\n| `id` | UUID of the product to update |\n\n**Request body:**\n```json\n{\n  \"name\": \"Classic Burger Deluxe\"\n}\n```\n\n**Example response (200):**\n```json\n{\n  \"id\": \"018f3d4e-5f6a-7b8c-c9d0-e1f2a3b4c5d6\",\n  \"name\": \"Classic Burger Deluxe\",\n  \"stock\": 50\n}\n```"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response reflects the updated name', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.name).to.eql('Classic Burger Deluxe');",
+                  "});",
+                  "",
+                  "pm.test('Response id is unchanged', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.eql(pm.collectionVariables.get('productId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "200 - Product Name Updated",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Classic Burger Deluxe\"\n}",
+                  "options": {"raw": {"language": "json"}}
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products/{{productId}}/name",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products", "{{productId}}", "name"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"id\": \"018f3d4e-5f6a-7b8c-c9d0-e1f2a3b4c5d6\",\n  \"name\": \"Classic Burger Deluxe\",\n  \"stock\": 50\n}"
+            },
+            {
+              "name": "404 - Product Not Found",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Classic Burger Deluxe\"\n}",
+                  "options": {"raw": {"language": "json"}}
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products/non-existent-id/name",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products", "non-existent-id", "name"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "04 - Update Product Stock",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "Request body must be JSON"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stock\": 120\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products/{{productId}}/stock",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products", "{{productId}}", "stock"]
+            },
+            "description": "Updates only the stock quantity of an existing product.\n\nUses `{{franchiseId}}`, `{{branchId}}`, and `{{productId}}` collection variables.\n\n**Path parameters:**\n| Parameter | Description |\n|---|---|\n| `franchiseId` | UUID of the parent franchise |\n| `branchId` | UUID of the parent branch |\n| `id` | UUID of the product to update |\n\n**Request body:**\n```json\n{\n  \"stock\": 120\n}\n```\n\n**Example response (200):**\n```json\n{\n  \"id\": \"018f3d4e-5f6a-7b8c-c9d0-e1f2a3b4c5d6\",\n  \"name\": \"Classic Burger Deluxe\",\n  \"stock\": 120\n}\n```"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response reflects the updated stock', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.stock).to.eql(120);",
+                  "});",
+                  "",
+                  "pm.test('Response id is unchanged', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.eql(pm.collectionVariables.get('productId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "200 - Product Stock Updated",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"stock\": 120\n}",
+                  "options": {"raw": {"language": "json"}}
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products/{{productId}}/stock",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products", "{{productId}}", "stock"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"id\": \"018f3d4e-5f6a-7b8c-c9d0-e1f2a3b4c5d6\",\n  \"name\": \"Classic Burger Deluxe\",\n  \"stock\": 120\n}"
+            },
+            {
+              "name": "404 - Product Not Found",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"stock\": 120\n}",
+                  "options": {"raw": {"language": "json"}}
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products/non-existent-id/stock",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products", "non-existent-id", "stock"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "05 - Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products", "{{productId}}"]
+            },
+            "description": "Permanently deletes a product. Returns the deleted product in the response body.\n\nUses `{{franchiseId}}`, `{{branchId}}`, and `{{productId}}` collection variables.\n\n**Path parameters:**\n| Parameter | Description |\n|---|---|\n| `franchiseId` | UUID of the parent franchise |\n| `branchId` | UUID of the parent branch |\n| `id` | UUID of the product to delete |\n\n**Example response (200):**\n```json\n{\n  \"id\": \"018f3d4e-5f6a-7b8c-c9d0-e1f2a3b4c5d6\",\n  \"name\": \"Classic Burger Deluxe\",\n  \"stock\": 120\n}\n```"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains the deleted product id', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.eql(pm.collectionVariables.get('productId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "200 - Product Deleted",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products/{{productId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products", "{{productId}}"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"id\": \"018f3d4e-5f6a-7b8c-c9d0-e1f2a3b4c5d6\",\n  \"name\": \"Classic Burger Deluxe\",\n  \"stock\": 120\n}"
+            },
+            {
+              "name": "404 - Product Not Found",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/franchises/{{franchiseId}}/branches/{{branchId}}/products/non-existent-id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "franchises", "{{franchiseId}}", "branches", "{{branchId}}", "products", "non-existent-id"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Health",
       "description": "Actuator endpoints exposed for operational monitoring.\n\nThe `/actuator/health` endpoint is configured with liveness and readiness probes, making it suitable for Kubernetes health checks.",
       "item": [
         {

@@ -54,7 +54,7 @@ public class BranchReactiveRepositoryAdapter
     }
 
     private static Branch toBranch(BranchEntity entity) {
-        return new Branch(entity.getId(), Optional.ofNullable(entity.getName()));
+        return new Branch(entity.getId(), Optional.ofNullable(entity.getName()), null);
     }
 
     private static BranchEntity getBranchEntity(String id, String name, String franchiseId) {

@@ -4,6 +4,7 @@ import co.com.bancolombia.model.branch.Branch;
 import co.com.bancolombia.model.branch.gateways.BranchRepository;
 import co.com.bancolombia.model.franchise.Franchise;
 import co.com.bancolombia.model.franchise.gateways.FranchiseRepository;
+import co.com.bancolombia.model.product.gateways.ProductRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,14 +38,19 @@ class GetFranchiseByIdUseCaseTest {
     @Mock
     BranchRepository branchRepository;
 
+    @Mock
+    ProductRepository productRepository;
+
     @Test
-    @DisplayName("should return franchise with its branches when found")
-    void shouldFindFranchiseWithBranchesByIdSuccessfully() {
+    @DisplayName("should return franchise with its branches and products when found")
+    void shouldFindFranchiseWithBranchesAndProductsByIdSuccessfully() {
         Franchise franchise = new Franchise(FRANCHISE_ID, Optional.of(FRANCHISE_NAME), null);
-        Branch branch1 = new Branch("b-1", Optional.of("Downtown"));
-        Branch branch2 = new Branch("b-2", Optional.of("Uptown"));
+        Branch branch1 = new Branch("b-1", Optional.of("Downtown"), null);
+        Branch branch2 = new Branch("b-2", Optional.of("Uptown"), null);
         when(franchiseRepository.findFranchiseById(FRANCHISE_ID)).thenReturn(Mono.just(franchise));
         when(branchRepository.findBranchesByFranchiseId(FRANCHISE_ID)).thenReturn(Flux.just(branch1, branch2));
+        when(productRepository.findProductsByBranchId("b-1")).thenReturn(Flux.empty());
+        when(productRepository.findProductsByBranchId("b-2")).thenReturn(Flux.empty());
 
         StepVerifier.create(useCase.run(FRANCHISE_ID))
                 .expectNextMatches(found ->
@@ -52,7 +58,9 @@ class GetFranchiseByIdUseCaseTest {
                         && found.name().equals(Optional.of(FRANCHISE_NAME))
                         && found.branches().size() == 2
                         && found.branches().get(0).id().equals("b-1")
-                        && found.branches().get(1).id().equals("b-2"))
+                        && found.branches().get(0).products().isEmpty()
+                        && found.branches().get(1).id().equals("b-2")
+                        && found.branches().get(1).products().isEmpty())
                 .verifyComplete();
 
         verify(franchiseRepository).findFranchiseById(FRANCHISE_ID);

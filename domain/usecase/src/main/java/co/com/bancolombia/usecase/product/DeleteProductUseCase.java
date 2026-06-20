@@ -6,11 +6,11 @@ import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
-public class GetProductByIdUseCase {
+public class DeleteProductUseCase {
 
     private final ProductRepository productRepository;
 
     public Mono<Product> run(String franchiseId, String branchId, String productId) {
-        return productRepository.findProductById(franchiseId, branchId, productId);
+        return productRepository.deleteProduct(franchiseId, branchId, productId);
     }
 }

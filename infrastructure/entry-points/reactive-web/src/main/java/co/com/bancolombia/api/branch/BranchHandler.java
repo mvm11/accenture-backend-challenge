@@ -23,7 +23,7 @@ public class BranchHandler {
     public Mono<ServerResponse> createBranch(ServerRequest request) {
         String franchiseId = request.pathVariable("franchiseId");
         return request.bodyToMono(BranchRequest.class)
-                .map(dto -> new Branch(null, Optional.ofNullable(dto.name())))
+                .map(dto -> new Branch(null, Optional.ofNullable(dto.name()), null))
                 .flatMap(branch -> saveBranchUseCase.run(franchiseId, branch))
                 .flatMap(saved -> ServerResponse.status(201).bodyValue(saved));
     }

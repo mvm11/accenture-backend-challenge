@@ -2,6 +2,7 @@ package co.com.bancolombia.api.branch;
 
 import co.com.bancolombia.api.RouterRest;
 import co.com.bancolombia.api.franchise.FranchiseHandler;
+import co.com.bancolombia.api.product.ProductHandler;
 import co.com.bancolombia.model.branch.Branch;
 import co.com.bancolombia.usecase.branch.FindBranchByIdUseCase;
 import co.com.bancolombia.usecase.branch.SaveBranchUseCase;
@@ -9,6 +10,10 @@ import co.com.bancolombia.usecase.branch.UpdateBranchNameUseCase;
 import co.com.bancolombia.usecase.franchise.GetFranchiseByIdUseCase;
 import co.com.bancolombia.usecase.franchise.SaveFranchiseUseCase;
 import co.com.bancolombia.usecase.franchise.UpdateFranchiseNameUseCase;
+import co.com.bancolombia.usecase.product.DeleteProductUseCase;
+import co.com.bancolombia.usecase.product.GetProductByIdUseCase;
+import co.com.bancolombia.usecase.product.SaveProductUseCase;
+import co.com.bancolombia.usecase.product.UpdateProductUseCase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,7 +33,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @WebFluxTest
-@ContextConfiguration(classes = {RouterRest.class, FranchiseHandler.class, BranchHandler.class})
+@ContextConfiguration(classes = {RouterRest.class, FranchiseHandler.class, BranchHandler.class, ProductHandler.class})
 class BranchHandlerTest {
 
     private static final String FRANCHISE_ID = "franchise-1";
@@ -60,6 +65,18 @@ class BranchHandlerTest {
     @MockitoBean
     private UpdateBranchNameUseCase updateBranchNameUseCase;
 
+    @MockitoBean
+    private SaveProductUseCase saveProductUseCase;
+
+    @MockitoBean
+    private GetProductByIdUseCase getProductByIdUseCase;
+
+    @MockitoBean
+    private UpdateProductUseCase updateProductUseCase;
+
+    @MockitoBean
+    private DeleteProductUseCase deleteProductUseCase;
+
     @Value("${api.paths.franchises}")
     private String franchisesPath;
 
@@ -78,7 +95,7 @@ class BranchHandlerTest {
         @Test
         @DisplayName("should return 201 when branch is created successfully")
         void shouldReturn201OnSuccess() {
-            Branch saved = new Branch(BRANCH_ID, Optional.of("My Branch"));
+            Branch saved = new Branch(BRANCH_ID, Optional.of("My Branch"), null);
             when(saveBranchUseCase.run(eq(FRANCHISE_ID), any())).thenReturn(Mono.just(saved));
 
             webTestClient.post()
@@ -135,7 +152,7 @@ class BranchHandlerTest {
         @Test
         @DisplayName("should return 200 with branch body when found")
         void shouldReturn200WhenBranchFound() {
-            Branch branch = new Branch(BRANCH_ID, Optional.of("My Branch"));
+            Branch branch = new Branch(BRANCH_ID, Optional.of("My Branch"), null);
             when(findBranchByIdUseCase.run(FRANCHISE_ID, BRANCH_ID)).thenReturn(Mono.just(branch));
 
             webTestClient.get()
@@ -187,7 +204,7 @@ class BranchHandlerTest {
         @Test
         @DisplayName("should return 200 with updated branch body")
         void shouldReturn200WhenUpdated() {
-            Branch updated = new Branch(BRANCH_ID, Optional.of(NEW_NAME));
+            Branch updated = new Branch(BRANCH_ID, Optional.of(NEW_NAME), null);
             when(updateBranchNameUseCase.run(FRANCHISE_ID, BRANCH_ID, NEW_NAME)).thenReturn(Mono.just(updated));
 
             webTestClient.patch()
