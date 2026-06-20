@@ -52,7 +52,7 @@ class BranchReactiveRepositoryAdapterTest {
 
     @BeforeEach
     void setUp() {
-        domainBranch = new Branch(BRANCH_ID, Optional.of(BRANCH_NAME));
+        domainBranch = new Branch(BRANCH_ID, Optional.of(BRANCH_NAME), null);
         persistedEntity = BranchEntity.builder()
                 .id(PERSISTED_ID)
                 .name(BRANCH_NAME)

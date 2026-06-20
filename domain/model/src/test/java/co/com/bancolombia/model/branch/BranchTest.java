@@ -13,7 +13,7 @@ class BranchTest {
     @Test
     @DisplayName("should create branch successfully when name is valid")
     void shouldCreateBranchSuccessfully() {
-        Branch branch = new Branch("id-1", Optional.of("My Branch"));
+        Branch branch = new Branch("id-1", Optional.of("My Branch"), null);
 
         assertEquals("id-1", branch.id());
         assertEquals(Optional.of("My Branch"), branch.name());
@@ -23,7 +23,7 @@ class BranchTest {
     @DisplayName("should throw when name is empty")
     void shouldThrowWhenNameIsEmpty() {
         InvalidBranchException ex = assertThrows(InvalidBranchException.class,
-                () -> new Branch("id-1", Optional.of("")));
+                () -> new Branch("id-1", Optional.of(""), null));
 
         assertEquals("Branch name must not be empty", ex.getMessage());
     }
@@ -32,7 +32,7 @@ class BranchTest {
     @DisplayName("should throw when name is blank")
     void shouldThrowWhenNameIsBlank() {
         InvalidBranchException ex = assertThrows(InvalidBranchException.class,
-                () -> new Branch("id-1", Optional.of("   ")));
+                () -> new Branch("id-1", Optional.of("   "), null));
 
         assertEquals("Branch name must not be empty", ex.getMessage());
     }
@@ -41,6 +41,6 @@ class BranchTest {
     @DisplayName("should throw when name is absent")
     void shouldThrowWhenNameIsAbsent() {
         assertThrows(InvalidBranchException.class,
-                () -> new Branch("id-1", Optional.empty()));
+                () -> new Branch("id-1", Optional.empty(), null));
     }
 }

@@ -28,7 +28,7 @@ class UpdateBranchNameUseCaseTest {
     @Test
     @DisplayName("should update branch name successfully")
     void shouldUpdateBranchNameSuccessfully() {
-        Branch updatedBranch = new Branch("id-1", Optional.of("New Name"));
+        Branch updatedBranch = new Branch("id-1", Optional.of("New Name"), null);
         when(repository.updateBranchName("franchise-1", "id-1", "New Name")).thenReturn(Mono.just(updatedBranch));
 
         StepVerifier.create(useCase.run("franchise-1", "id-1", "New Name"))
