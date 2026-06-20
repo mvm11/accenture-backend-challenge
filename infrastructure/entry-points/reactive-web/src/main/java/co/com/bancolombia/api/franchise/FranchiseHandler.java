@@ -1,7 +1,9 @@
 package co.com.bancolombia.api.franchise;
 
 import co.com.bancolombia.model.franchise.Franchise;
+import co.com.bancolombia.model.franchise.exceptions.FranchiseNotFoundException;
 import co.com.bancolombia.usecase.franchise.GetFranchiseByIdUseCase;
+import co.com.bancolombia.usecase.franchise.GetTopStockProductPerBranchUseCase;
 import co.com.bancolombia.usecase.franchise.SaveFranchiseUseCase;
 import co.com.bancolombia.usecase.franchise.UpdateFranchiseNameUseCase;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ public class FranchiseHandler {
     private final SaveFranchiseUseCase saveFranchiseUseCase;
     private final GetFranchiseByIdUseCase getFranchiseByIdUseCase;
     private final UpdateFranchiseNameUseCase updateFranchiseNameUseCase;
+    private final GetTopStockProductPerBranchUseCase getTopStockProductPerBranchUseCase;
 
     public Mono<ServerResponse> createFranchise(ServerRequest request) {
         return request.bodyToMono(FranchiseRequest.class)
@@ -40,5 +43,13 @@ public class FranchiseHandler {
                 .flatMap(dto -> updateFranchiseNameUseCase.run(id, dto.name()))
                 .flatMap(updated -> ServerResponse.ok().bodyValue(updated))
                 .switchIfEmpty(ServerResponse.notFound().build());
+    }
+
+    public Mono<ServerResponse> getTopStockProducts(ServerRequest request) {
+        String franchiseId = request.pathVariable("franchiseId");
+        return getTopStockProductPerBranchUseCase.run(franchiseId)
+                .collectList()
+                .flatMap(list -> ServerResponse.ok().bodyValue(list))
+                .onErrorResume(FranchiseNotFoundException.class, e -> ServerResponse.notFound().build());
     }
 }

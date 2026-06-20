@@ -30,6 +30,7 @@ public class RouterRest {
         String franchisePath  = franchisesPath + ID_SEGMENT;
         String branchesPath   = franchisesPath + "/{franchiseId}/branches";
         String branchPath     = branchesPath   + ID_SEGMENT;
+        String topStockPath   = branchesPath   + "/products/top-stock";
         String productsPath   = branchesPath   + "/{branchId}/products";
         String productPath    = productsPath   + ID_SEGMENT;
 
@@ -39,6 +40,7 @@ public class RouterRest {
                 .andRoute(POST(branchesPath),        branchHandler::createBranch)
                 .andRoute(GET(branchPath),           branchHandler::getBranchById)
                 .andRoute(PATCH(branchPath),         branchHandler::updateBranchName)
+                .andRoute(GET(topStockPath),         franchiseHandler::getTopStockProducts)
                 .andRoute(POST(productsPath),        productHandler::createProduct)
                 .andRoute(GET(productPath),          productHandler::getProductById)
                 .andRoute(PATCH(productPath + "/name"),  productHandler::updateProductName)

@@ -10,6 +10,7 @@ import co.com.bancolombia.usecase.branch.UpdateBranchNameUseCase;
 import co.com.bancolombia.usecase.franchise.GetFranchiseByIdUseCase;
 import co.com.bancolombia.usecase.franchise.SaveFranchiseUseCase;
 import co.com.bancolombia.usecase.franchise.UpdateFranchiseNameUseCase;
+import co.com.bancolombia.usecase.franchise.GetTopStockProductPerBranchUseCase;
 import co.com.bancolombia.usecase.product.DeleteProductUseCase;
 import co.com.bancolombia.usecase.product.GetProductByIdUseCase;
 import co.com.bancolombia.usecase.product.SaveProductUseCase;
@@ -60,6 +61,9 @@ class ConfigTest {
 
     @MockitoBean
     private DeleteProductUseCase deleteProductUseCase;
+
+    @MockitoBean
+    private GetTopStockProductPerBranchUseCase getTopStockProductPerBranchUseCase;
 
     @Test
     @DisplayName("SecurityHeadersConfig filter should add security headers to every response")

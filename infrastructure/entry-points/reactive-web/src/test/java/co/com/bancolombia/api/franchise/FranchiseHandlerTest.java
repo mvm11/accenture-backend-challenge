@@ -10,6 +10,8 @@ import co.com.bancolombia.usecase.branch.UpdateBranchNameUseCase;
 import co.com.bancolombia.usecase.franchise.GetFranchiseByIdUseCase;
 import co.com.bancolombia.usecase.franchise.SaveFranchiseUseCase;
 import co.com.bancolombia.usecase.franchise.UpdateFranchiseNameUseCase;
+import co.com.bancolombia.model.branch.TopStockProduct;
+import co.com.bancolombia.usecase.franchise.GetTopStockProductPerBranchUseCase;
 import co.com.bancolombia.usecase.product.DeleteProductUseCase;
 import co.com.bancolombia.usecase.product.GetProductByIdUseCase;
 import co.com.bancolombia.usecase.product.SaveProductUseCase;
@@ -24,8 +26,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.math.BigInteger;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -36,8 +40,10 @@ import static org.mockito.Mockito.when;
 class FranchiseHandlerTest {
 
     private static final String FRANCHISE_ID = "id-1";
+    private static final String UNKNOWN_ID = "unknown-id";
     private static final String NEW_NAME = "New Name";
     private static final String UNEXPECTED_FAILURE = "unexpected failure";
+    private static final String TOP_STOCK_SUFFIX = "/branches/products/top-stock";
     private static final String UPDATE_NAME_BODY = """
             {"name": "New Name"}
             """;
@@ -74,6 +80,9 @@ class FranchiseHandlerTest {
 
     @MockitoBean
     private DeleteProductUseCase deleteProductUseCase;
+
+    @MockitoBean
+    private GetTopStockProductPerBranchUseCase getTopStockProductPerBranchUseCase;
 
     @Value("${api.paths.franchises}")
     private String franchisesPath;
@@ -179,7 +188,7 @@ class FranchiseHandlerTest {
         @Test
         @DisplayName("should return 404 when franchise is not found")
         void shouldReturn404WhenNotFound() {
-            when(getFranchiseByIdUseCase.run("unknown-id")).thenReturn(Mono.empty());
+            when(getFranchiseByIdUseCase.run(UNKNOWN_ID)).thenReturn(Mono.empty());
 
             webTestClient.get()
                     .uri(franchisesPath + "/unknown-id")
@@ -233,7 +242,7 @@ class FranchiseHandlerTest {
         @Test
         @DisplayName("should return 404 when franchise is not found")
         void shouldReturn404WhenNotFound() {
-            when(updateFranchiseNameUseCase.run("unknown-id", NEW_NAME)).thenReturn(Mono.empty());
+            when(updateFranchiseNameUseCase.run(UNKNOWN_ID, NEW_NAME)).thenReturn(Mono.empty());
 
             webTestClient.patch()
                     .uri(franchisesPath + "/unknown-id")
@@ -258,6 +267,76 @@ class FranchiseHandlerTest {
                     .uri(franchisesPath + "/" + FRANCHISE_ID)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(UPDATE_NAME_BODY)
+                    .exchange()
+                    .expectStatus().is5xxServerError();
+        }
+    }
+
+    @Nested
+    @DisplayName("getTopStockProducts – happy path")
+    class GetTopStockProductsHappyPath {
+
+        @Test
+        @DisplayName("should return 200 with top-stock list when franchise exists")
+        void shouldReturn200WithTopStockList() {
+            TopStockProduct item = new TopStockProduct(
+                    "branch-1", "Downtown", "product-1", "Burger", BigInteger.valueOf(120));
+            when(getTopStockProductPerBranchUseCase.run(FRANCHISE_ID)).thenReturn(Flux.just(item));
+
+            webTestClient.get()
+                    .uri(franchisesPath + "/" + FRANCHISE_ID + TOP_STOCK_SUFFIX)
+                    .exchange()
+                    .expectStatus().isOk()
+                    .expectBody()
+                    .jsonPath("$[0].branchId").isEqualTo("branch-1")
+                    .jsonPath("$[0].branchName").isEqualTo("Downtown")
+                    .jsonPath("$[0].productName").isEqualTo("Burger")
+                    .jsonPath("$[0].stock").isEqualTo(120);
+        }
+
+        @Test
+        @DisplayName("should return 200 with empty list when franchise has no branches with products")
+        void shouldReturn200WithEmptyListWhenNoProducts() {
+            when(getTopStockProductPerBranchUseCase.run(FRANCHISE_ID)).thenReturn(Flux.empty());
+
+            webTestClient.get()
+                    .uri(franchisesPath + "/" + FRANCHISE_ID + TOP_STOCK_SUFFIX)
+                    .exchange()
+                    .expectStatus().isOk()
+                    .expectBody().json("[]");
+        }
+    }
+
+    @Nested
+    @DisplayName("getTopStockProducts – not found")
+    class GetTopStockProductsNotFound {
+
+        @Test
+        @DisplayName("should return 404 when franchise does not exist")
+        void shouldReturn404WhenFranchiseNotFound() {
+            when(getTopStockProductPerBranchUseCase.run(UNKNOWN_ID))
+                    .thenReturn(Flux.error(new co.com.bancolombia.model.franchise.exceptions.FranchiseNotFoundException(
+                            "Franchise not found: unknown-id")));
+
+            webTestClient.get()
+                    .uri(franchisesPath + "/unknown-id/branches/products/top-stock")
+                    .exchange()
+                    .expectStatus().isNotFound();
+        }
+    }
+
+    @Nested
+    @DisplayName("getTopStockProducts – error propagation")
+    class GetTopStockProductsErrorPropagation {
+
+        @Test
+        @DisplayName("should return 5xx when use case throws an unexpected error")
+        void shouldReturn5xxOnUnexpectedError() {
+            when(getTopStockProductPerBranchUseCase.run(FRANCHISE_ID))
+                    .thenReturn(Flux.error(new RuntimeException(UNEXPECTED_FAILURE)));
+
+            webTestClient.get()
+                    .uri(franchisesPath + "/" + FRANCHISE_ID + TOP_STOCK_SUFFIX)
                     .exchange()
                     .expectStatus().is5xxServerError();
         }
